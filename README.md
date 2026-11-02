@@ -129,6 +129,33 @@ rather than American English. Always check the TTS return value:
 if it reports a different voice id than requested, a substitution
 happened and the segment must be re-rendered, not shipped.
 
+### 7. Story-photo insets (optional, blended)
+
+After assembling, overlay each story's featured photo as a blended
+inset — bottom-right by default, so it never clashes with the
+top-right logo:
+
+```sh
+python3 add_insets.py --video bulletin-<YYYYMMDD>.mp4 \
+    --out bulletin-<YYYYMMDD>-inset.mp4 \
+    --segments run/segments.json \
+    --segment-images 1:run/insets/florida.jpg 2:run/insets/trump.jpg
+```
+
+Segment numbers are the manifest indices (intro is 0, so story
+segments are 1–4 in a 4-story bulletin); segments with no image get
+no inset. Or pass an explicit list instead:
+`--insets run/insets.json` with `{"start", "end", "image"}` entries.
+
+The inset is not a pasted box: the full photo is fitted inside a
+440×248 maximum (never cropped — a portrait photo keeps its own
+narrower shape, so the video shows through beside it), with rounded
+corners, feathered edges, a soft drop shadow, and a 0.5s fade in/out
+at its segment boundaries. Requires Pillow (`pip install Pillow`) in
+addition to ffmpeg. The same photo-rights caution as step 5 applies:
+a story photo used as an inset is still a reuse in a new medium, so
+check the wire licence before posting the video publicly.
+
 The legacy looped mode still exists for quick drafts:
 
 ```sh
