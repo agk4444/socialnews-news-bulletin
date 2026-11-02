@@ -79,16 +79,52 @@ Paths in `clips.txt` are relative to the `clips.txt` file itself
 (ffmpeg concat rule), not to the working directory — `run/clips.txt`
 lists `clips/...`, not `run/clips/...`.
 
-### 6. Assemble
+### 6. Assemble — synced, with logo
+
+For a finished bulletin, use the **synced** mode, not the old looped
+mode. Split the script into paragraphs, narrate each paragraph
+separately (same voice), generate one clip per paragraph, then:
+
+```sh
+python3 segment_manifest.py --script run/script.txt \
+    --audios run/seg-0.mp3 run/seg-1.mp3 run/seg-2.mp3 run/seg-3.mp3 run/seg-4.mp3 \
+    --clips run/clips/clip-0.mp4 run/clips/clip-1.mp4 run/clips/clip-2.mp4 run/clips/clip-3.mp4 run/clips/clip-4.mp4 \
+    --out run/segments.json
+
+python3 assemble.py --segments run/segments.json \
+    --logo logo.png --logo-size 160 --logo-position top-right \
+    --out bulletin-<YYYYMMDD>.mp4
+```
+
+Why this keeps narration and video in sync: each segment's clip is
+looped/trimmed to exactly that segment's narration duration, and
+segments are concatenated in script order. So the Florida clip plays
+while the Florida story is spoken, the Delhi clip while the Delhi
+story is spoken, and a missing segment can't silently shift the rest
+— `segment_manifest.py` fails on a count mismatch. This is
+segment-level sync; word-level sync would need forced alignment
+(e.g. Whisper timestamps) and is not worth it here — a viewer
+notices a story playing under the wrong narration, not a word
+landing a fraction of a second early.
+
+Logo: `--logo` takes the square SocialNews.XYZ logo file, scales it
+to fit a square (`--logo-size`, default 160px, aspect preserved with
+transparent padding), and overlays it in a corner for the whole
+video (`--logo-position`: top-right, top-left, bottom-right,
+bottom-left). Keep the logo file out of the repo (see `.gitignore`
+note below) or commit it as `logo.png` — either way, pass its path
+explicitly; the pipeline never guesses a logo URL.
+
+The legacy looped mode still exists for quick drafts:
 
 ```sh
 python3 assemble.py --clips run/clips.txt --audio run/narration.mp3 --out bulletin-<YYYYMMDD>.mp4
 ```
 
-`assemble.py` loops the concatenated clips to cover the narration
-length, then trims to the audio. Output is h264 + AAC, 1280×720.
-Verify before delivery: duration matches the narration, audio is
-intelligible throughout, and no clip ends mid-sentence.
+Output in both modes is h264 + AAC, 1280×720. Verify before
+delivery: duration matches the narration, audio is intelligible
+throughout, each clip matches the story being spoken, and the logo
+is legible in the corner without covering captions or faces.
 
 ## Examples
 
