@@ -1,0 +1,110 @@
+# SocialNews News Bulletin — reusable video pipeline
+
+A news-reader-style video bulletin built from SocialNews.XYZ's own top
+stories. One run = fetch top stories → pick 4 → draft a short bulletin
+script → narrate it → generate generic studio visuals → assemble one MP4.
+
+This repo holds the **pipeline, not the finished videos**. Finished MP4s
+and narration are per-run outputs (see `.gitignore`); the narration
+script for a run is kept under `examples/` so a past bulletin can be
+checked later.
+
+## The pipeline
+
+### 1. Fetch top stories
+
+```sh
+python3 fetch_top.py --per-page 10 --out run/stories.json
+```
+
+Public, read-only API, no auth:
+`https://www.socialnews.xyz/wp-json/socialnews/v1/articles?section=110`
+
+Top section is id `110` — never substitute Politics. Known quirk:
+`/articles` occasionally stalls while `/health` and `/search` still
+pass; `fetch_top.py` retries 3 times with a 6s backoff, and if it still
+stalls, retry later or fall back to `/search`.
+
+### 2. Pick 4 stories
+
+From `run/stories.json`, pick 4 distinct, major stories. Drop
+same-event duplicates (an initial report + an update of one event
+counts once), and favour a mix over four versions of one theme.
+Record the picked story ids + URLs in the run notes.
+
+### 3. Draft the bulletin script
+
+Write `run/script.txt`, ~200–260 words (about 90–100 seconds spoken), original summary wording:
+
+- Open: "Hello, this is your SocialNews bulletin for <day, date>."
+- One short segment per story, in the picked order, each with the
+  key fact, place, and number/date where the story gives one.
+- Close: "That's your major stories bulletin from SocialNews XYZ."
+- Headlines/excerpts with attribution + link are fine; do **not**
+  republish full article text verbatim.
+- Cross-check any major claim that isn't in the SocialNews story
+  itself before it goes in the script.
+- No real identifiable anchor person: the bulletin uses a generic
+  narrator voice and generic studio visuals, never a real person's
+  face or voice.
+
+### 4. Narrate it
+
+One voice for the whole bulletin (the Nov 1–2 runs used
+`avocado_v2:MAI_03` via the Muse TTS tool):
+
+```sh
+tts speak --text-stdin --output run/narration.mp3 < run/script.txt
+```
+
+Write numbers, times, and abbreviations as they should sound
+("twenty-one seventeen", not "21-17").
+
+### 5. Generate visuals
+
+One generic 1280×720, ~10s clip per segment: intro + one per story
+(5 clips for a 4-story bulletin). Prompts must be generic — a news
+studio, a courthouse exterior, a sports arena — never a recognisable
+real person, and never a re-creation of a specific real event's
+footage. Save them under `run/clips/` and list them in order in
+`run/clips.txt` (ffmpeg concat format):
+
+```
+file 'clips/intro.mp4'
+file 'clips/story-1.mp4'
+...
+```
+
+Paths in `clips.txt` are relative to the `clips.txt` file itself
+(ffmpeg concat rule), not to the working directory — `run/clips.txt`
+lists `clips/...`, not `run/clips/...`.
+
+### 6. Assemble
+
+```sh
+python3 assemble.py --clips run/clips.txt --audio run/narration.mp3 --out bulletin-<YYYYMMDD>.mp4
+```
+
+`assemble.py` loops the concatenated clips to cover the narration
+length, then trims to the audio. Output is h264 + AAC, 1280×720.
+Verify before delivery: duration matches the narration, audio is
+intelligible throughout, and no clip ends mid-sentence.
+
+## Examples
+
+- `examples/2026-11-01-script.txt` — the first bulletin (Nov 1, 2026):
+  US midterms rallies, Mahadev/CBI, Hylo Open double, hockey 4–2.
+  Finished video was ~69s, 1280×720.
+- `examples/2026-11-02-script.txt` — the second bulletin (Nov 2, 2026),
+  the first run through this repo's pipeline: Florida Learjet crash,
+  Trump midterm push, ED raid in Punjab, Modi renewable-energy summit.
+
+## What this is not
+
+- Not a scheduled job: a run is started by a person (or by an agent
+  on request), not by a cron, until someone explicitly asks for a
+  schedule.
+- Not a live feed: stories are a snapshot at fetch time, and the
+  script is written from that snapshot.
+- Not an anchor: there is no presenter, real or synthetic, in these
+  videos — narration + generic visuals only.
