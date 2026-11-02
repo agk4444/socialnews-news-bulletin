@@ -111,9 +111,23 @@ Logo: `--logo` takes the square SocialNews.XYZ logo file, scales it
 to fit a square (`--logo-size`, default 160px, aspect preserved with
 transparent padding), and overlays it in a corner for the whole
 video (`--logo-position`: top-right, top-left, bottom-right,
-bottom-left). Keep the logo file out of the repo (see `.gitignore`
-note below) or commit it as `logo.png` — either way, pass its path
-explicitly; the pipeline never guesses a logo URL.
+bottom-left). Prefer `logo-transparent.png` (white background
+converted to alpha, feathered edges) over `logo.png` — a white
+square reads as a sticker pasted on the video, while the transparent
+version sits like a broadcast watermark, with the video showing
+through between the letters. Both files are committed in this repo;
+pass the path explicitly, the pipeline never guesses a logo URL.
+
+Voices per story: narration is per segment, so voices can change
+per segment. The default voice is used for general/US stories; for
+Indian stories, narrate those segments with an Indian-accent voice
+from the TTS catalog — the Nov 2 run used
+`avocado_v2:vd3_vd2_r8_rep1k_0369_v068_28k_g5k` (male, Indian, calm,
+moderate pacing) for the ED-raid and Modi-summit segments, which
+pronounces names like Hoshiarpur, Arora, and Modi in Indian English
+rather than American English. Always check the TTS return value:
+if it reports a different voice id than requested, a substitution
+happened and the segment must be re-rendered, not shipped.
 
 The legacy looped mode still exists for quick drafts:
 
