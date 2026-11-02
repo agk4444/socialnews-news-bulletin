@@ -167,6 +167,44 @@ delivery: duration matches the narration, audio is intelligible
 throughout, each clip matches the story being spoken, and the logo
 is legible in the corner without covering captions or faces.
 
+### 8. Vertical Reel cut (optional)
+
+For Instagram, re-cut the same segments to 1080×1920 with
+`assemble_reel.py`. Use the **clip-inset** layout — it is the
+landscape formula, vertical, and it is the approved look (Nov 2
+test, v3). The earlier photo layout (still photo as the main
+visual, even with a Ken Burns zoom) looked like a slideshow, not a
+video, because its zoom was only 8–12% over a whole segment.
+
+```sh
+python3 assemble_reel.py --layout clip-inset \
+    --segments run/segments-indian.json \
+    --segment-images 1:run/insets/florida.jpg 2:run/insets/trump.jpg \
+        3:run/insets/ed.jpg 4:run/insets/modi.jpg \
+    --titles run/titles-nov2.json --logo logo-transparent.png \
+    --out bulletin-<YYYYMMDD>-reel.mp4
+```
+
+- Background: each segment's generic clip, centre-cropped to fill
+  1080×1920. Cropping a generic clip is fine — the no-crop rule is
+  for story photos, which are never cropped here either.
+- Foreground: the story photo as a blended inset (fitted, rounded,
+  feathered, shadowed, 0.5s fade in/out), centred in the lower
+  middle. The inset input must be looped — a single-image fade
+  never advances (same trap as step 7).
+- Headline: at the top, below the logo, so Instagram's bottom UI
+  never covers it. Intro/closing use the clip full-screen with the
+  logo large and centred.
+- Titles: a JSON file mapping segment index to headline
+  (`{"0": "...", "1": "..."}`), one per segment.
+- Posting cut: keep it under 90 seconds — some Instagram accounts
+  still cap Reels at 90s even though standard Reels allow up to
+  3 minutes. The Nov 2 test ran 96.3s, so a posting version needs a
+  tighter script/narration, not just a re-cut.
+- Same photo-rights caution as step 5 applies before posting
+  publicly: wire/agency story photos need a licence check for
+  Instagram video reuse.
+
 ## Examples
 
 - `examples/2026-11-01-script.txt` — the first bulletin (Nov 1, 2026):
